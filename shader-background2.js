@@ -1,3 +1,23 @@
+
+// Predefined light variant palette
+const LIGHT_COLORS = [
+  "#D2FFFC", // Aqua Light
+  "#D0E5FF", // Lavender Light
+  "#FEBCBD", // Red Light
+  "#B8FFD5", // Green Light
+  "#CBCFFF", // Purple Light
+  "#FEB8EE", // Pink Light
+  "#E0B6FE"  // Fuschia Light
+];
+
+function pickRandomColor() {
+  const hex = LIGHT_COLORS[Math.floor(Math.random() * LIGHT_COLORS.length)];
+  const r = parseInt(hex.substr(1,2),16)/255;
+  const g = parseInt(hex.substr(3,2),16)/255;
+  const b = parseInt(hex.substr(5,2),16)/255;
+  return new THREE.Vector3(r,g,b);
+}
+
 const vertexShader = `
     // UV coordinates passed to fragment shader for texture mapping
     varying vec2 vUv;
@@ -19,6 +39,8 @@ const fragmentShader = `
     // Mouse position in normalized coordinates
     uniform vec2 uMouse;
     // UV coordinates received from vertex shader
+    uniform vec3 uBlob1;
+    uniform vec3 uBlob2;
     varying vec2 vUv;
     // Seed value passed from JavaScript for randomization
     uniform float uSeed;
@@ -140,10 +162,7 @@ const fragmentShader = `
         blob2 += detail;
         
         // Define colors (same as before)
-        vec3 blobColor1 = vec3(0.0, 0.588, 0.784);    // #0096C8
-        vec3 blobColor2 = vec3(0.0, 0.784, 0.627);    // #00C8A0
-        vec3 backgroundColor = vec3(0.012, 0.051, 0.043);  // #030D0B
-        
+                                
         // Add noise in background color
         float bgNoise = snoise(uv * 20.0 + vec2(uSeed * 4.0)) * 0.03;
         vec3 noisyBg = backgroundColor + (backgroundColor * bgNoise);
@@ -153,7 +172,7 @@ const fragmentShader = `
         float blob2Mask = smoothstep(0.1, 0.3, blob2);
         
         // Mix colors with background
-        vec3 finalColor = backgroundColor;
+        vec3 finalColor = vec3(0.0);
         
         // Layer the blobs with reduced opacity
         finalColor = mix(finalColor, blobColor1, blob1Mask * 0.75);  // Increase to 80% opacity
@@ -163,7 +182,7 @@ const fragmentShader = `
         float gradientNoise = snoise(uv * 400.0 + vec2(uSeed * 5.0)) * .3;
         finalColor += backgroundColor * gradientNoise;
         
-        gl_FragColor = vec4(finalColor, 1.0);
+        gl_FragColor = vec4(finalColor, max(blob1Mask, blob2Mask));
     }
 `;
 
@@ -216,18 +235,18 @@ class ShaderBackground {
 
   createMesh() {
     const geometry = new THREE.PlaneGeometry(2, 2);
-    this.material = new THREE.ShaderMaterial({
-      vertexShader,
+    this.material = new THREE.ShaderMaterial({vertexShader,
       fragmentShader,
-      uniforms: {
-        uTime: { value: 0 },
+      uniforms: {uTime: { value: 0,
+        uBlob1: { value: new THREE.Vector3() },
+        uBlob2: { value: new THREE.Vector3() }},
         uResolution: {
           value: new THREE.Vector2(window.innerWidth, window.innerHeight),
         },
         uMouse: { value: this.mouse },
         uSeed: { value: Math.random() * 100.0 },
-      },
-    });
+      },,
+      transparent: true});
 
     const mesh = new THREE.Mesh(geometry, this.material);
     this.scene.add(mesh);
