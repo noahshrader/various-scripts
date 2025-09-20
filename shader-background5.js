@@ -1,1 +1,0 @@
-// solid fbfbf9 version placeholder
