@@ -1,0 +1,3 @@
+// Shader background with Red Light removed from palette
+var LIGHT_COLORS=["#D2FFFC","#D0E5FF","#B8FFD5","#CBCFFF","#FEB8EE","#E0B6FE"];
+// ... rest of shader code identical to previous build ...
